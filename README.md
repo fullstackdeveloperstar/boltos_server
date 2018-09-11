@@ -1,1 +1,3 @@
-# boltos_server
+# boltos-server
+
+The boltos application server
