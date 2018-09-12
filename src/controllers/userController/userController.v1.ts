@@ -91,15 +91,18 @@ export class UserController {
                     return response.json(body);
                 } else {
                     const randomKey = uuidv4();
-                    const savedUser = await UserModel.create(
-                        {
+                    const savedUser = await UserModel.create({
+                            user_id : 'NULL',
                             username: userName,
                             email: email,
                             password_hash: hash,
                             first_name: firstName,
                             last_name: lastName,
                             company_name: companyName,
-                            telegram_id: randomKey
+                            "2fa_token" : 'NULL',
+                            telegram_id: randomKey,
+                            sms_phone : 'NULL',
+                            slack_id : 'NULL'
                         }
                     );
                     if (savedUser) {
@@ -452,7 +455,7 @@ export class UserController {
         let data = [];
         let k = 0;
         let userId = request.user.id;
-        const miningServers = await MiningServerModel.findAll({ where: { user_id: userId } });
+        const miningServers = await MiningServerModel.findAll({ where: { user_id: userId, is_deleted: '0' } });
         if (miningServers && miningServers.length > 0) {
             for (let i = 0; i < miningServers.length; i++) {
                 const miningConfig = await MiningConfigModel.find({ where: { mc_id: (<any>miningServers[i]).dataValues.mining_config } });
@@ -566,6 +569,8 @@ export class UserController {
         }
     }
 
+
+
     @Post("/mining-profiles")
     @UseBefore(AuthMiddleware)
     async updateMiningProfile(
@@ -614,10 +619,11 @@ export class UserController {
     ) {
         let userId = request.user.id;
         let data = [];
-        const miningPools = await MiningPoolModel.findAll({ where: { user_id: userId } });
+        const miningPools = await MiningPoolModel.findAll({ where: { user_id: userId, is_deleted : '0'} });
         if(miningPools && miningPools.length > 0) {
             for(let i = 0; i < miningPools.length; i++) {
                 let result: any = {};
+                result.mpool_id = (<any>miningPools[i]).dataValues.mp_id;
                 result.accountName = (<any>miningPools[i]).dataValues.mp_name;
                 result.currency = (<any>miningPools[i]).dataValues.mp_currency;
                 result.stratumUrl = (<any>miningPools[i]).dataValues.mp_stratum_url;
@@ -636,6 +642,103 @@ export class UserController {
                 status: 200,
                 message: "mining pools (empty)",
                 data: data
+            };
+            return response.status(200).json(body);
+        }
+    }
+
+    @Post("/mining-pool")
+    @UseBefore(AuthMiddleware)
+    async updateMiningPool(
+        @Req() request: IRequest,
+        @Res() response: Response,
+        @BodyParam("mpool_id") mpool_id: number,
+        @BodyParam("accountName") accountName: string,
+        @BodyParam("currency") currency: string,
+        @BodyParam("stratumUrl") stratumUrl: string,
+        @BodyParam("username") username: string,  
+        @BodyParam("password") password: string,        
+    ) {
+        const miningPool : any = await MiningPoolModel.findById(mpool_id);
+        if(miningPool) {
+            const newUpdatePool = await miningPool.update({
+                mp_name: accountName,
+                mp_currency : currency,
+                mp_stratum_url : stratumUrl,
+                mp_username : username,
+                mp_password : password
+            });
+
+            if (newUpdatePool) {
+                let body = {
+                    status: 200,
+                    message: "mining pool is updated",
+                    data: {
+                        ok: true
+                    }
+                };
+                return response.status(200).json(body);
+            }else {
+                let body = {
+                    status: 200,
+                    message: "mining pool is not updated",
+                    data: {
+                        ok: false
+                    }
+                };
+                return response.status(200).json(body);
+            }
+        } else {
+            let body = {
+                status: 200,
+                message: "mining pool is not exist",
+                data: {
+                    ok: false
+                }
+            };
+            return response.status(200).json(body);
+        }
+    }
+
+    @Post("/delete-mining-pool")
+    @UseBefore(AuthMiddleware)
+    async deleteMiningPool(
+        @Req() request: IRequest,
+        @Res() response: Response,
+        @BodyParam("mpool_id") mpool_id: number,      
+    ) {
+        const miningPool : any = await MiningPoolModel.findById(mpool_id);
+        if(miningPool) {
+            const newUpdatePool = await miningPool.update({
+                is_deleted: '1'
+            });
+
+            if (newUpdatePool) {
+                let body = {
+                    status: 200,
+                    message: "mining pool is deleted",
+                    data: {
+                        ok: true
+                    }
+                };
+                return response.status(200).json(body);
+            }else {
+                let body = {
+                    status: 200,
+                    message: "mining pool is not deleted",
+                    data: {
+                        ok: false
+                    }
+                };
+                return response.status(200).json(body);
+            }
+        } else {
+            let body = {
+                status: 200,
+                message: "mining pool is not exist",
+                data: {
+                    ok: false
+                }
             };
             return response.status(200).json(body);
         }
@@ -713,16 +816,55 @@ export class UserController {
         @Req() request: IRequest,
         @Res() response: Response
     ) {
-        const rowsAffectedCount = await UpdateQueueModel.destroy({
-            where: {
-              mserver_id: mserver_id
+        // const rowsAffectedCount = await UpdateQueueModel.destroy({
+        //     where: {
+        //       mserver_id: mserver_id
+        //     }
+        // });
+
+        const server: any = await MiningServerModel.findById(mserver_id);
+
+        if(server) {
+            const newServer = await server.update({
+                is_deleted: '1'
+            });
+
+            if(newServer) {
+                let body = {
+                    status: 200,
+                    message: "server(s) deleted",
+                    data: {
+                        ok: true
+                    }
+                };
+                return response.status(200).json(body);
+            } else {
+                 let body = {
+                    status: 200,
+                    message: "server(s) was not deleted",
+                    data: {
+                        ok: false
+                    }
+                };
+                return response.status(200).json(body);
             }
-          });
-          let body = {
+        } else {
+            
+            let body = {
+                status: 404,
+                message: "server not found",
+                data: {
+                    ok: false
+                }
+            };
+            return response.status(200).json(body);
+        }
+        
+        let body = {
             status: 200,
             message: "server(s) deleted",
             data: {
-                deletedCount: rowsAffectedCount
+                ok: true
             }
         };
         return response.status(200).json(body);

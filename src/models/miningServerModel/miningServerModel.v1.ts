@@ -43,6 +43,9 @@ export function setMiningServerModel(sequelize){
         },
         min_fanspeed: {
             type: Sequelize.INTEGER
+        },
+        is_deleted: {
+            type: Sequelize.INTEGER  
         }
     });  
     // MiningServerModel.hasMany(User, {foreignKey: 'user_id', sourceKey: 'user_id'});

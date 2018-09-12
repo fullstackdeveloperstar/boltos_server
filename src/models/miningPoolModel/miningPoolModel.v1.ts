@@ -25,7 +25,11 @@ export function setMiningPoolModel(sequelize){
         },
         mp_password: {
             type: Sequelize.STRING(30)
+        },
+        is_deleted: {
+            type: Sequelize.INTEGER
         }
+
     });  
     return MiningPoolModel;  
 };
