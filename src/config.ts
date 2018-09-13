@@ -30,7 +30,7 @@ export namespace config {
             return process.env.DB_USER ? process.env.DB_USER : "root";
         }
         export function getPassword(): string {
-            return process.env.DB_PASS ? process.env.DB_PASS : "0000";
+            return process.env.DB_PASS ? process.env.DB_PASS : "";
         }
     }
 }

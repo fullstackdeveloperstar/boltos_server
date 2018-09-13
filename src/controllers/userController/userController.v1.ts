@@ -551,6 +551,7 @@ export class UserController {
                 result.type = (<any>miningConfigs[i]).dataValues.mc_type;
                 result.pools = (<any>miningConfigs[i]).dataValues.mc_pools;
                 result.switchingIntervals = (<any>miningConfigs[i]).dataValues.mc_switching;
+
                 data[i] = result;
             }
             let body = {
@@ -641,6 +642,43 @@ export class UserController {
             let body = {
                 status: 200,
                 message: "mining pools (empty)",
+                data: data
+            };
+            return response.status(200).json(body);
+        }
+    }
+
+    @Post("/get-mining-pool")
+    @UseBefore(AuthMiddleware)
+    async getMiningPool(
+        @Req() request: IRequest,
+        @Res() response: Response,
+        @BodyParam("mp_id") mp_id: number,
+    ) {
+        let userId = request.user.id;
+        let data = [];
+        const miningPools = await MiningPoolModel.findAll({ where: { user_id: userId, mp_id: mp_id,is_deleted : '0'} });
+        if(miningPools && miningPools.length > 0) {
+            
+                let result: any = {};
+                result.mpool_id = (<any>miningPools[0]).dataValues.mp_id;
+                result.accountName = (<any>miningPools[0]).dataValues.mp_name;
+                result.currency = (<any>miningPools[0]).dataValues.mp_currency;
+                result.stratumUrl = (<any>miningPools[0]).dataValues.mp_stratum_url;
+                result.username = (<any>miningPools[0]).dataValues.mp_username;
+                result.password = (<any>miningPools[0]).dataValues.mp_password;
+                
+           
+            let body = {
+                status: 200,
+                message: "mining pool",
+                data: result
+            };
+            return response.status(200).json(body);
+        } else {
+            let body = {
+                status: 200,
+                message: "mining pool (empty)",
                 data: data
             };
             return response.status(200).json(body);
