@@ -542,7 +542,7 @@ export class UserController {
     ) {
         let userId = request.user.id;
         let data = [];
-        const miningConfigs = await MiningConfigModel.findAll({ where: { user_id: userId } });
+        const miningConfigs = await MiningConfigModel.findAll({ where: { user_id: userId, is_deleted: '0' } });
         if(miningConfigs && miningConfigs.length > 0) {
             for(let i = 0; i < miningConfigs.length; i++) {
                 let result: any = {};
@@ -551,7 +551,7 @@ export class UserController {
                 result.type = (<any>miningConfigs[i]).dataValues.mc_type;
                 result.pools = (<any>miningConfigs[i]).dataValues.mc_pools;
                 result.switchingIntervals = (<any>miningConfigs[i]).dataValues.mc_switching;
-
+                result.is_deleted = (<any>miningConfigs[i]).dataValues.is_deleted;
                 data[i] = result;
             }
             let body = {
@@ -604,6 +604,39 @@ export class UserController {
             let body = {
                 status: 200,
                 message: "please fill in required fields",
+                error: {
+                    ok: false
+                }
+            };
+            return response.status(200).json(body);
+        }
+    }
+
+    @Post("/delete-mining-profile")
+    @UseBefore(AuthMiddleware)
+    async deleteMiningProfile(
+        @Req() request: IRequest,
+        @Res() response: Response,
+        @BodyParam("mc_id") mc_id: number,
+    ) {
+        let userId = request.user.id;
+        const miningConfig: any = await MiningConfigModel.findById(mc_id);
+        if(miningConfig) {
+            const newMiningConfig = await miningConfig.update({
+                is_deleted : '1'
+            });
+            let body = {
+                status: 200,
+                message: "mining profile deleted",
+                data: {
+                    ok: true
+                }
+            };
+            return response.status(200).json(body);
+        } else {
+            let body = {
+                status: 200,
+                message: "Mining Profile does not exist/",
                 error: {
                     ok: false
                 }

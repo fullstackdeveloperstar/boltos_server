@@ -22,6 +22,9 @@ export function setMiningConfigModel(sequelize) {
         },
         mc_switching: {
             type: Sequelize.INTEGER
+        },
+        is_deleted: {
+            type: Sequelize.INTEGER  
         }
     }, {
             freezeTableName: true,
