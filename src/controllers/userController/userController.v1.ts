@@ -570,7 +570,48 @@ export class UserController {
         }
     }
 
+    @Post("/mining-profile-create")
+    @UseBefore(AuthMiddleware)
+    async createMiningProfile(
+        @Req() request: IRequest,
+        @Res() response: Response,
+        @BodyParam("mc_name") mc_name: string,
+        @BodyParam("mc_type") mc_type: number,
+        @BodyParam("mc_pools") mc_pools: string,
+        @BodyParam("mc_switching") mc_switching: number,
+    ) {
+        let userId = request.user.id;
 
+        const newMiningConfig = await MiningConfigModel.create({
+            mc_name: mc_name,
+            mc_type: mc_type,
+            mc_pools: mc_pools,
+            mc_switching: mc_switching,
+            mc_id : 'NULL',
+            user_id : userId,
+            is_deleted : '0'
+        });
+
+        if(newMiningConfig) {
+             let body = {
+                status: 200,
+                message: "mining profile created",
+                data: {
+                    ok: true
+                }
+            };
+            return response.status(200).json(body);
+        } else {
+             let body = {
+                status: 200,
+                message: "mining profile is not created",
+                data: {
+                    ok: false
+                }
+            };
+            return response.status(200).json(body);
+        }
+    }
 
     @Post("/mining-profiles")
     @UseBefore(AuthMiddleware)
@@ -769,6 +810,51 @@ export class UserController {
             };
             return response.status(200).json(body);
         }
+    }
+
+    @Post("/mining-pool-create")
+    @UseBefore(AuthMiddleware)
+    async createMiningPool(
+        @Req() request: IRequest,
+        @Res() response: Response,
+        @BodyParam("accountName") accountName: string,
+        @BodyParam("currency") currency: string,
+        @BodyParam("stratumUrl") stratumUrl: string,
+        @BodyParam("username") username: string,  
+        @BodyParam("password") password: string,        
+    ) {
+        const userId = request.user.id;
+        const miningPool : any = await MiningPoolModel.create({
+            mp_id : 'NULL',
+            user_id: userId,
+            mp_name: accountName,
+            mp_currency : currency,
+            mp_stratum_url : stratumUrl,
+            mp_username : username,
+            mp_password : password,
+            is_deleted : '0'
+        });
+
+        if (miningPool) {
+            let body = {
+                status: 200,
+                message: "mining pool is created",
+                data: {
+                    ok: true
+                }
+            };
+            return response.status(200).json(body);
+        } else {
+            let body = {
+                status: 200,
+                message: "mining pool is not created",
+                data: {
+                    ok: false
+                }
+            };
+            return response.status(200).json(body);
+        }
+        
     }
 
     @Post("/delete-mining-pool")
@@ -1001,20 +1087,24 @@ export class UserController {
         let data = [];
         const miningConfigs = await MiningConfigModel.findAll({ where: { user_id: userId } });
         if(miningConfigs && miningConfigs.length > 0) {
-            let result: any = {};
+            // console.log(miningConfigs);
+            var result: any = {};
             for(let i = 0; i < miningConfigs.length; i++) {
                 result.mc_id = (<any>miningConfigs[i]).dataValues.mc_id;
                 result.mc_name = (<any>miningConfigs[i]).dataValues.mc_name;
                 result.mc_type = (<any>miningConfigs[i]).dataValues.mc_type;
                 result.mc_pools = (<any>miningConfigs[i]).dataValues.mc_pools;
                 result.mc_switching = (<any>miningConfigs[i]).dataValues.mc_switching;
-                data[i] = result;
+                data.push((<any>miningConfigs[i]).dataValues);
+                console.log((<any>miningConfigs[i]).dataValues);
+                console.log('----------------------');
             }
             let body = {
                 status: 200,
                 message: "mining configs",
                 data: data
             };
+            // console.log(data)
             return response.status(200).json(body);
         } else {
             let body = {
