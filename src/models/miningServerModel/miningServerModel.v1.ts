@@ -46,6 +46,9 @@ export function setMiningServerModel(sequelize){
         },
         is_deleted: {
             type: Sequelize.INTEGER  
+        },
+        updated: {
+            type: Sequelize.INTEGER  
         }
     });  
     // MiningServerModel.hasMany(User, {foreignKey: 'user_id', sourceKey: 'user_id'});

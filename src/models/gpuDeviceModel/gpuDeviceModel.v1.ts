@@ -25,6 +25,12 @@ export function setGpuDeviceModel(sequelize){
         },
         gpu_plimit: {
             type: Sequelize.STRING(10)
+        },
+        gpu_coremhz: {
+            type: Sequelize.STRING(10)
+        },
+        gpu_memorymhz: {
+            type: Sequelize.STRING(10)
         }
     });  
     return GpuDeviceModel;  

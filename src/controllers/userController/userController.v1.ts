@@ -92,7 +92,7 @@ export class UserController {
                 } else {
                     const randomKey = uuidv4();
                     const savedUser = await UserModel.create({
-                            user_id : 'NULL',
+                            user_id : 0,
                             username: userName,
                             email: email,
                             password_hash: hash,
@@ -514,8 +514,12 @@ export class UserController {
             for (let i = 0; i < data.numGpus; i++) {
                 let gpuMakeModel = `${(<any>gpuDevices[i]).dataValues.gpu_make} - ${(<any>gpuDevices[i]).dataValues.gpu_model}`;
                 data.gpus[i] = {
+                    gpu_id: (<any>gpuDevices[i]).dataValues.gpu_id,
                     pciSlot: (<any>gpuDevices[i]).dataValues.gpu_slot,
-                    makeModel: gpuMakeModel
+                    makeModel: gpuMakeModel,
+                    gpu_coremhz: (<any>gpuDevices[i]).dataValues.gpu_coremhz,
+                    gpu_memorymhz: (<any>gpuDevices[i]).dataValues.gpu_memorymhz,
+                    gpu_plimit : (<any>gpuDevices[i]).dataValues.gpu_plimit
                 };
             }
             let body = {
@@ -587,7 +591,7 @@ export class UserController {
             mc_type: mc_type,
             mc_pools: mc_pools,
             mc_switching: mc_switching,
-            mc_id : 'NULL',
+            mc_id : 0,
             user_id : userId,
             is_deleted : '0'
         });
@@ -825,7 +829,7 @@ export class UserController {
     ) {
         const userId = request.user.id;
         const miningPool : any = await MiningPoolModel.create({
-            mp_id : 'NULL',
+            mp_id : 0,
             user_id: userId,
             mp_name: accountName,
             mp_currency : currency,
@@ -1035,18 +1039,29 @@ export class UserController {
         @BodyParam("target_temp") target_temp: number,
         @BodyParam("mining_config") mining_config: number,
         @BodyParam("min_fanspeed") min_fanspeed: number,
+        @BodyParam("gpus") gpus: any,
         @Req() request: IRequest,
         @Res() response: Response
     ) {
+        
         const server: any = await MiningServerModel.findById(mserver_id);
         if(server) {
+            var date1 = new Date();
+            var updated = date1.getFullYear() + '-' + (date1.getMonth() < 9 ? '0' : '') + (date1.getMonth()+1) + '-' + (date1.getDate() < 10 ? '0' : '') + date1.getDate();
+
             const newServer = await server.update({
                 miner_name: miner_name,
                 target_temp: target_temp,
                 mining_config: mining_config,
-                min_fanspeed: min_fanspeed
+                min_fanspeed: min_fanspeed,
+                updated: updated
             });
             if(newServer){
+                
+                for( var index = 0; index < gpus.length; index ++ ) {
+                    const gpuModel : any = await GpuDeviceModel.findById(gpus[index].gpu_id);
+                    const updatedgpuModel = await gpuModel.update(gpus[index]);    
+                }
                 let body = {
                     status: 200,
                     message: "server updated",
@@ -1055,6 +1070,7 @@ export class UserController {
                     }
                 };
                 return response.status(200).json(body);
+                    
             } else {
                 let body = {
                     status: 500,
@@ -1065,6 +1081,7 @@ export class UserController {
                 };
                 return response.status(200).json(body);
             }
+            console.log(gpus);
         } else {
             let body = {
                 status: 404,
@@ -1096,8 +1113,8 @@ export class UserController {
                 result.mc_pools = (<any>miningConfigs[i]).dataValues.mc_pools;
                 result.mc_switching = (<any>miningConfigs[i]).dataValues.mc_switching;
                 data.push((<any>miningConfigs[i]).dataValues);
-                console.log((<any>miningConfigs[i]).dataValues);
-                console.log('----------------------');
+                // console.log((<any>miningConfigs[i]).dataValues);
+                // console.log('----------------------');
             }
             let body = {
                 status: 200,
